@@ -1,0 +1,185 @@
+<!doctype HTML>
+<html lang="en">
+<head>
+<title>AKTUALIZACJA</title>
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="icon" href="data:;base64,iVBORw0KGgo=">  <!--prevent favicon requests-->
+<style>
+#uploadForm {
+    width: 90%;
+    height:80%;
+    margin:0 auto;
+    background-color:#00163B;
+    text-align:center;
+    border:solid 6px green;
+    font-size: 23px;
+     color: green;
+     border-radius: 20px;
+}
+#title{
+    text-align:center;
+    margin:15px;
+    font-size: 20px;
+     color: red;
+}
+#fileSelection{
+    height: 3.5rem;
+    width: 80%;
+    border:solid 3px green;
+    border-radius: 8px;
+    font-size: 25px;
+}
+#uploadProgressBar{
+    margin:10px;
+    width: 80%;
+    height: 2.5rem;
+    border-radius: 8px;
+    text-align: center;
+    color: white;
+    background-image: green;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+#uploadFileButton{
+    width:130px;
+    height:100px;
+    margin:10px;
+    font-size: 28px;
+}
+#statusText{
+    margin:5px;
+    font-size: 20px;
+    color: red;
+}
+
+form {
+  text-align: center;
+  margin: 0 auto;
+  width: 50%;
+  margin-left : 15%
+  font-size: 16px;
+}
+
+body {
+  background-color: black;
+}
+
+    
+    
+}
+</style>
+</head>
+<BR><BR><BR>
+<body>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <p id="title">** AKTUALIZACJA **<br>www.sterowanie-destylatorem.pl
+        <br>Wybierz plik i kliknij na przycisk START.</p>
+        
+        <input id="fileSelection" name="file" type="file" />
+        <BR><BR>
+        <progress id="uploadProgressBar" value="0" max="0"></progress>
+        <p id="statusText">&nbsp;</p>
+        <input id="uploadFileButton" type="submit" value="START" disabled="disabled"/>
+         <BR><BR>
+    </form>
+<script type="text/javascript">
+
+function startUpload()
+{
+    let request = new XMLHttpRequest();
+
+    request.onerror = function()
+    {
+        window.statusText.innerHTML = 'Chyba się wgrało!';
+    }
+
+    request.ontimeout = function()
+    {
+        window.statusText.innerHTML = 'ERROR: Przekroczono czas połączenia!';
+    }
+
+    request.onreadystatechange = function()
+    {
+        if (this.status == 404) 
+        {
+            window.statusText.innerHTML = '404 - Upload URL not found on server';
+            window.fileSelection.value = '';
+        }
+
+        if (this.readyState == 4)
+        {
+            switch (this.status)
+            {
+                case 200 :
+                    window.statusText.innerHTML = 'Udało się!';
+                    window.fileSelection.value = '';
+                    window.fileSelection.disabled = false;
+                    window.uploadFileButton.disabled = true;
+                    break;
+                case 400 :
+                    window.statusText.innerHTML = this.responseText;
+                    window.fileSelection.disabled = false;
+                    break;
+                case 401 :
+                    window.statusText.innerHTML = 'Wpisz poprawnie nazwę urzytkownika i hasło !';
+                    window.fileSelection.disabled = false;
+                    window.uploadFileButton.disabled = false;
+                    break;
+                default : console.log('http result code: ' + this.status);
+            }
+        }
+    };
+
+    request.upload.addEventListener('progress', function(event)
+    {
+        const percent = (event.loaded / event.total) * 100;
+        window.statusText.innerHTML = Math.round(percent) + '% wgrano. Proszę czekać...';
+        let progress = window.uploadProgressBar;
+        progress.setAttribute('value', event.loaded);
+        progress.setAttribute('max', event.total);
+    });
+
+    request.addEventListener('load', function()
+    {
+        let progress = window.uploadProgressBar;
+        progress.setAttribute('value', 0);
+        progress.setAttribute('max', 0);
+    });
+
+    request.open('POST', '/update');
+    // request.open('POST', 'http://192.168.0.107/'); //debug/remote running of this page
+
+    // request.setRequestHeader('Authorization', 'Basic ' + btoa(window.username.value + ":" + window.password.value));
+	//request.setRequestHeader('Authorization', 'Basic ' + window.username.value + ":" + window.password.value);
+
+
+    const file = window.fileSelection.files[0];
+    request.setRequestHeader('FileSize', file.size);
+
+    let data = new FormData();
+    data.append('file', file);
+
+    window.statusText.innerHTML = 'Rozpoczynam wysyłanie...';
+
+    request.send(data);
+}
+
+document.getElementById('fileSelection').addEventListener('change', function()
+{
+    window.uploadFileButton.disabled = this.files[0] ? false : true;
+    window.statusText.innerHTML = '&nbsp;';
+});
+
+document.getElementById('uploadFileButton').addEventListener('click', function(event)
+{
+    event.preventDefault();
+    this.disabled = true;
+    window.fileSelection.disabled = true;
+    startUpload();
+});
+
+</script>
+</body>
+</html>

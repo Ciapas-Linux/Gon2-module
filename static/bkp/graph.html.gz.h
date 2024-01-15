@@ -1,0 +1,2 @@
+#define graph_html_gz_len 4
+const uint8_t graph_html_gz[] PROGMEM = {0x00,0x00,0x00,0x00,0x00};
